@@ -1,0 +1,42 @@
+preset: psr2
+
+finder:
+  exclude:
+    - "tests"
+    - "database/migrations"
+
+enabled:
+  - short_array_syntax
+  - combine_consecutive_unsets
+  - method_separation
+  - no_multiline_whitespace_before_semicolons
+  - single_quote
+  - binary_operator_spaces
+  - blank_line_before_return
+  - combine_consecutive_issets
+  - compact_nullable_typehint
+  - concat_with_spaces
+  - declare_equal_normalize
+  - function_typehint_space
+  - hash_to_slash_comment
+  - include
+  - lowercase_cast
+  - no_multiline_whitespace_around_double_arrow
+  - no_spaces_outside_offset
+  - no_unused_imports
+  - no_whitespace_before_comma_in_array
+  - no_whitespace_in_blank_line
+  - object_operator_without_whitespace
+  - php_unit_fqcn_annotation
+  - phpdoc_no_package
+  - phpdoc_scalar
+  - phpdoc_single_line_var_spacing
+  - protected_to_private
+  - return_assignment
+  - single_blank_line_before_namespace
+  - ternary_operator_spaces
+  - trailing_comma_in_multiline_array
+  - trim_array_spaces
+  - whitespace_after_comma_in_array
+  - no_null_property_initialization
+  - blank_line_after_opening_tag
