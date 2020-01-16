@@ -8,17 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
-use YQueue\ApiSupport\Http\Transformers\AbstractTransformer;
+use Tests\Http\Transformers\Stubs\StepA;
+use Tests\Http\Transformers\Stubs\StepB;
+use Tests\Http\Transformers\Stubs\Transformer;
 use YQueue\ApiSupport\Versioning\ApiVersion;
 
 class AbstractTransformerTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        StepTracker::getInstance()->reset();
+    }
+
     public function testPassingANullModelReturnsNull()
     {
         $this->assertNull(
-            $this->getTransformer()->transformModel(null, new ApiVersion('01-01-2020'))
+            (new Transformer)->transformModel(null, new ApiVersion('01-01-2020'))
         );
     }
 
@@ -28,7 +42,7 @@ class AbstractTransformerTest extends TestCase
             ->shouldReceive('toArray')->once()->andReturn(['foo' => 'bar'])
             ->getMock();
 
-        $result = $this->getTransformer()->transformModel($model, new ApiVersion('01-01-2020'));
+        $result = (new Transformer)->transformModel($model, new ApiVersion('01-01-2020'));
 
         $this->assertEquals(['foo' => 'bar'], $result);
     }
@@ -36,7 +50,7 @@ class AbstractTransformerTest extends TestCase
     public function testEmptyCollectionReturnsEmptyArray(): void
     {
         $this->assertEmpty(
-            $this->getTransformer()->transformCollection([], new ApiVersion('01-01-2020'))
+            (new Transformer)->transformCollection([], new ApiVersion('01-01-2020'))
         );
     }
 
@@ -52,7 +66,7 @@ class AbstractTransformerTest extends TestCase
             $model
         ]);
 
-        $result = $this->getTransformer()->transformCollection($collection, new ApiVersion('01-01-2020'));
+        $result = (new Transformer)->transformCollection($collection, new ApiVersion('01-01-2020'));
 
         $this->assertEquals(array_fill(0, 3, ['foo' => 'bar']), $result);
     }
@@ -63,13 +77,15 @@ class AbstractTransformerTest extends TestCase
             ->shouldReceive('toArray')->andReturn(['foo' => 'bar'])
             ->getMock();
 
-        $stepOne = Mockery::spy(TransformerStepStub::class, [new ApiVersion('02-01-2020')])->makePartial();
-        $stepTwo = Mockery::spy(TransformerStepStub::class, [new ApiVersion('01-01-2020')])->makePartial();
+        $transformer = new Transformer([
+            StepA::class,
+            StepB::class,
+        ]);
 
-        $this->getTransformer([$stepOne, $stepTwo])->transformModel($model, new ApiVersion('02-01-2020'));
+        $transformer->transformModel($model, new ApiVersion('02-01-2020'));
 
-        $stepOne->shouldHaveReceived('transform')->once();
-        $stepTwo->shouldNotHaveReceived('transform');
+        $this->assertEquals(1, StepTracker::getInstance()->count(StepA::class));
+        $this->assertEquals(0, StepTracker::getInstance()->count(StepB::class));
     }
 
     public function testStepIsPassedMutatedDataFromPreviousStep(): void
@@ -78,44 +94,19 @@ class AbstractTransformerTest extends TestCase
             ->shouldReceive('toArray')->andReturn(['foo' => 'bar'])
             ->getMock();
 
-        $stepOne = Mockery::spy(TransformerStepStub::class, [new ApiVersion('02-01-2020'), ['step' => 'one']])->makePartial();
-        $stepTwo = Mockery::spy(TransformerStepStub::class, [new ApiVersion('02-01-2020')])->makePartial();
+        $transformer = new Transformer([
+            StepA::class,
+            StepB::class,
+        ]);
 
-        $this->getTransformer([$stepOne, $stepTwo])->transformModel($model, new ApiVersion('02-01-2020'));
+        $expected = [
+            'foo' => 'bar',
+            'step_a' => true,
+            'step_b' => true,
+        ];
 
-        $stepOne->shouldHaveReceived('transform')->with(['foo' => 'bar'], $model)->once();
-        $stepTwo->shouldHaveReceived('transform')->with(['foo' => 'bar', 'step' => 'one'], $model)->once();
-    }
+        $actual = $transformer->transformModel($model, new ApiVersion('01-01-2020'));
 
-    /**
-     * Retrieve a transformer for the tests, optionally supplying some steps to process.
-     *
-     * @param array $steps
-     * @return AbstractTransformer
-     */
-    private function getTransformer($steps = []): AbstractTransformer
-    {
-        return new class($steps) extends AbstractTransformer {
-            private $expectedSteps;
-
-            public function __construct($steps)
-            {
-                $this->expectedSteps = $steps;
-            }
-
-            protected function getBaseData($model): array
-            {
-                if ($model instanceof Model) {
-                    return $model->toArray();
-                } else {
-                    return (array)$model;
-                }
-            }
-
-            protected function steps(): array
-            {
-                return $this->expectedSteps;
-            }
-        };
+        $this->assertEquals($expected, $actual);
     }
 }

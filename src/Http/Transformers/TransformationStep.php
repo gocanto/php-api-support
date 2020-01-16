@@ -23,9 +23,10 @@ interface TransformationStep
      *
      * @param array $data The data that has already been transformed.
      * @param Model|stdClass $model The source model that is being transformed.
+     * @param ApiVersion $apiVersion The api version supplied to the parent transformer.
      * @return array
      */
-    public function transform(array $data, $model): array;
+    public function transform(array $data, $model, ApiVersion $apiVersion): array;
 
     /**
      * The API version that this step targets.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YQueue\ApiSupport\Http\Transformers;
 
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use YQueue\ApiSupport\Versioning\ApiVersion;
 
@@ -11,16 +12,17 @@ abstract class AbstractTransformer
 {
     /**
      * @param Model|object|mixed $model
+     * @param ApiVersion $targetApiVersion
      * @return array
      */
-    abstract protected function getBaseData($model): array;
+    abstract protected function getBaseData($model, ApiVersion $targetApiVersion): array;
 
     /**
      * @param Model|object|mixed $model
-     * @param ApiVersion $apiVersion
+     * @param ApiVersion $targetApiVersion
      * @return array|null
      */
-    public function transformModel($model, ApiVersion $apiVersion): ?array
+    public function transformModel($model, ApiVersion $targetApiVersion): ?array
     {
         if ($model === null) {
             return null;
@@ -28,16 +30,16 @@ abstract class AbstractTransformer
 
         return $this->transform(
             $model,
-            $apiVersion
+            $targetApiVersion
         );
     }
 
     /**
      * @param iterable $models
-     * @param ApiVersion $apiVersion
+     * @param ApiVersion $targetApiVersion
      * @return array
      */
-    public function transformCollection(iterable $models, ApiVersion $apiVersion): array
+    public function transformCollection(iterable $models, ApiVersion $targetApiVersion): array
     {
         if (empty($models)) {
             return [];
@@ -46,7 +48,7 @@ abstract class AbstractTransformer
         $data = [];
 
         foreach ($models as $model) {
-            $data[] = $this->transform($model, $apiVersion);
+            $data[] = $this->transform($model, $targetApiVersion);
         }
 
         return $data;
@@ -55,7 +57,7 @@ abstract class AbstractTransformer
     /**
      * The transformation steps that should be processed.
      *
-     * @return TransformationStep[]
+     * @return array
      */
     protected function steps(): array
     {
@@ -69,11 +71,16 @@ abstract class AbstractTransformer
      */
     private function transform($model, ApiVersion $targetApiVersion) : array
     {
-        $data = $this->getBaseData($model);
+        $data = $this->getBaseData($model, $targetApiVersion);
 
-        foreach ($this->steps() as $step) {
+        // Resolve each step
+        $steps = array_map(function (string $step) {
+            return Container::getInstance()->make($step);
+        }, $this->steps());
+
+        foreach ($steps as $step) {
             if ($this->shouldRunStep($step, $targetApiVersion)) {
-                $data = $step->transform($data, $model);
+                $data = $step->transform($data, $model, $targetApiVersion);
             }
         }
 

@@ -4,21 +4,21 @@ namespace YQueue\ApiSupport\Database\Pagination\Exceptions;
 
 use Exception;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use YQueue\ApiSupport\Exceptions\ExceptionInterface;
-use YQueue\ApiSupport\Http\ErrorResponse;
+use YQueue\ApiSupport\Http\ErrorFactory;
 
 class PaginationException extends Exception implements ExceptionInterface
 {
     /**
      * @inheritDoc
      */
-    public function render(Request $response): ErrorResponse
+    public function render(Request $response): JsonResponse
     {
-        return new ErrorResponse(
+        return ErrorFactory::create(
             'pagination_error',
             $this->message,
-            Response::HTTP_BAD_REQUEST
+            JsonResponse::HTTP_BAD_REQUEST
         );
     }
 }

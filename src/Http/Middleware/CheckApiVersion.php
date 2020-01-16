@@ -7,7 +7,7 @@ namespace YQueue\ApiSupport\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
-use YQueue\ApiSupport\Http\ErrorResponse;
+use YQueue\ApiSupport\Http\ErrorFactory;
 use YQueue\ApiSupport\Versioning\ApiVersion;
 
 class CheckApiVersion
@@ -20,13 +20,13 @@ class CheckApiVersion
     public function handle($request, Closure $next)
     {
         if (! $request->hasHeader('X-API-VERSION')) {
-            return ErrorResponse::unsupportedApiVersion();
+            return ErrorFactory::unsupportedApiVersion();
         }
 
         try {
             new ApiVersion($request->header('X-API-VERSION'));
         } catch (InvalidArgumentException $e) {
-            return ErrorResponse::unsupportedApiVersion();
+            return ErrorFactory::unsupportedApiVersion();
         }
 
         return $next($request);

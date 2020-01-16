@@ -187,7 +187,10 @@ class PaginatorTest extends TestCase
         );
 
         $transformer = new class extends AbstractTransformer {
-            protected function getBaseData($model): array
+            /**
+             * @inheritDoc
+             */
+            protected function getBaseData($model, ApiVersion $targetApiVersion): array
             {
                 return (array)$model;
             }
@@ -220,7 +223,10 @@ class PaginatorTest extends TestCase
         );
 
         $transformer = new class extends AbstractTransformer {
-            protected function getBaseData($model): array
+            /**
+             * @inheritDoc
+             */
+            protected function getBaseData($model, ApiVersion $targetApiVersion): array
             {
                 return (array)$model;
             }

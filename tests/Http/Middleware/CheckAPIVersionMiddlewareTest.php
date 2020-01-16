@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Orchestra\Testbench\TestCase;
 use Tests\HasSampleDatesTrait;
-use YQueue\ApiSupport\Http\ErrorResponse;
+use YQueue\ApiSupport\Http\ErrorFactory;
 use YQueue\ApiSupport\Http\Middleware\CheckApiVersion;
 use YQueue\ApiSupport\Versioning\ApiVersion;
 
@@ -29,7 +29,7 @@ class CheckAPIVersionMiddlewareTest extends TestCase
         $response = $this->get('test');
 
         $response->assertExactJson(
-            json_decode(ErrorResponse::unsupportedApiVersion()->getContent(), true)
+            json_decode(ErrorFactory::unsupportedApiVersion()->getContent(), true)
         );
     }
 
@@ -42,7 +42,7 @@ class CheckAPIVersionMiddlewareTest extends TestCase
         $response = $this->withHeader('X-API-VERSION', $invalidDate)->get('test');
 
         $response->assertExactJson(
-            json_decode(ErrorResponse::unsupportedApiVersion()->getContent(), true)
+            json_decode(ErrorFactory::unsupportedApiVersion()->getContent(), true)
         );
     }
 
